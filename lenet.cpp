@@ -191,8 +191,8 @@ void relu2(float input[CONV2_NUM_OUT][CONV2_OUT_SIZE][CONV2_OUT_SIZE], float out
 void max_pooling2(float input[CONV2_NUM_OUT][CONV2_OUT_SIZE][CONV2_OUT_SIZE], float output[CONV2_NUM_OUT][MP2_OUT_SIZE][MP2_OUT_SIZE])
 {
     for (int c = 0; c < CONV2_NUM_OUT; c++){
-        for (int h = 0; h < CONV2_OUT_SIZE; h++){
-            for (int w = 0; w < CONV2_OUT_SIZE; w++){
+        for (int h = 0; h < MP2_OUT_SIZE; h++){
+            for (int w = 0; w < MP2_OUT_SIZE; w++){
                 float max_value = -FLT_MAX;
                 for (int i = h * 2; i < h * 2 + 2; i++){
                     for (int j = w * 2; j < w * 2 + 2; j++){
@@ -364,15 +364,17 @@ int parse_mnist_labels(const char* filename, unsigned char *labels)
 }
 
 // Parse parameter file and load it in to the arrays
-int parse_parameters()
+int parse_parameters(int numIter)
 {
     int Res;
     int NumBytesRead;
+    char filename[256];
 
-    fil = fopen("200_iter/_conv1_200.bin", "rb");
+    sprintf(filename, "%d_iter/_conv1_%d.bin", numIter, numIter);
+    fil = fopen(filename, "rb");
     if (!fil)
     {
-        printf("ERROR when opening parameter file (_conv1_200)!\n\r");
+        printf("ERROR when opening parameter file (%s)!\n\r", filename);
         return XST_FAILURE;
     }
 
@@ -388,9 +390,10 @@ int parse_parameters()
     }
     fclose(fil);
 
-    fil = fopen("200_iter/bias_conv1_200.bin", "rb");
+    sprintf(filename, "%d_iter/bias_conv1_%d.bin", numIter, numIter);
+    fil = fopen(filename, "rb");
     if (!fil){
-        printf("ERROR when opening parameter file (bias_conv1_200)!\n\r");
+        printf("ERROR when opening parameter file (%s)!\n\r", filename);
         return XST_FAILURE;
     }
     NumBytesRead = fread((void*)conv1_bias, sizeof(float), 6, fil);
@@ -405,9 +408,10 @@ int parse_parameters()
     }
     fclose(fil);
 
-    fil = fopen("200_iter/_conv2_200.bin", "rb");
+    sprintf(filename, "%d_iter/_conv2_%d.bin", numIter, numIter);
+    fil = fopen(filename, "rb");
     if (!fil){
-        printf("ERROR when opening parameter file (_conv2_200)!\n\r");
+        printf("ERROR when opening parameter file (%s)!\n\r", filename);
         return XST_FAILURE;
     }
     NumBytesRead = fread((void*)conv2_weights, sizeof(float), 16*6*5*5, fil);
@@ -422,9 +426,11 @@ int parse_parameters()
     }
     fclose(fil);
 
-    fil = fopen("200_iter/bias_conv2_200.bin", "rb");
+
+    sprintf(filename, "%d_iter/bias_conv2_%d.bin", numIter, numIter);
+    fil = fopen(filename, "rb");
     if (!fil){
-        printf("ERROR when opening parameter file (bias_conv2_200)!\n\r");
+        printf("ERROR when opening parameter file (%s)!\n\r", filename);
         return XST_FAILURE;
     }
     NumBytesRead = fread((void*)conv2_bias, sizeof(float), 16, fil);
@@ -439,9 +445,10 @@ int parse_parameters()
     }
     fclose(fil);
 
-    fil = fopen("200_iter/_score_200.bin", "rb");
+    sprintf(filename, "%d_iter/_score_%d.bin", numIter, numIter);
+    fil = fopen(filename, "rb");
     if (!fil){
-        printf("ERROR when opening parameter file (_score_200)!\n\r");
+        printf("ERROR when opening parameter file (%s)!\n\r", filename);
         return XST_FAILURE;
     }
     NumBytesRead = fread((void*)fc_weights, sizeof(float), 10*16*4*4, fil);
@@ -456,9 +463,10 @@ int parse_parameters()
     }
     fclose(fil);
 
-    fil = fopen("200_iter/bias_score_200.bin", "rb");
+    sprintf(filename, "%d_iter/bias_score_%d.bin", numIter, numIter);
+    fil = fopen(filename, "rb");
     if (!fil){
-        printf("ERROR when opening parameter file (bias_score_200)!\n\r");
+        printf("ERROR when opening parameter file (%s)!\n\r", filename);
         return XST_FAILURE;
     }
     NumBytesRead = fread((void*)fc_bias, sizeof(float), 10, fil);
@@ -518,7 +526,7 @@ int main(int argc, char **argv)
     parse_mnist_labels("labels.bin", labels);
 
     cout << "Parsing parameters\n\r";
-    parse_parameters();
+    parse_parameters(1000);
 
     cout << "Starting inference\n\r";
     int num_correct = 0;
