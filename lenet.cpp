@@ -81,7 +81,7 @@ float conv1_weights[CONV1_NUM_OUT][1][CONV1_KERNEL_SIZE][CONV1_KERNEL_SIZE] = { 
 float conv1_bias[CONV1_NUM_OUT] = { 0 };
 float conv1_output[CONV1_NUM_OUT][CONV1_OUT_SIZE][CONV1_OUT_SIZE] = { 0 };
 
-float pool2_output[CONV1_NUM_OUT][MP1_OUT_SIZE][MP1_OUT_SIZE] = { 0 };
+float pool1_output[CONV1_NUM_OUT][MP1_OUT_SIZE][MP1_OUT_SIZE] = { 0 };
 
 float conv2_weights[CONV2_NUM_OUT][CONV1_NUM_OUT][CONV2_KERNEL_SIZE][CONV2_KERNEL_SIZE] = { 0 };
 float conv2_bias[CONV2_NUM_OUT] = { 0 };
@@ -89,13 +89,9 @@ float conv2_output[CONV2_NUM_OUT][CONV2_OUT_SIZE][CONV2_OUT_SIZE] = { 0 };
 
 float pool2_output[CONV2_NUM_OUT][MP2_OUT_SIZE][MP2_OUT_SIZE] = { 0 };
 
-float conv5_weights[120][16][5][5] = { 0 };
-float conv5_bias[120] = { 0 };
-float conv5_output[120][1][1] = { 0 };
-
-float fc6_weights[FC_NUM_OUT][CONV2_NUM_OUT][MP2_OUT_SIZE][MP2_OUT_SIZE] = { 0 };
-float fc6_bias[FC_NUM_OUT] = { 0 };
-float fc6_output[FC_NUM_OUT] = { 0 };
+float fc_weights[FC_NUM_OUT][CONV2_NUM_OUT][MP2_OUT_SIZE][MP2_OUT_SIZE] = { 0 };
+float fc_bias[FC_NUM_OUT] = { 0 };
+float fc_output[FC_NUM_OUT] = { 0 };
 // *****************************************
 // End declaration of layers parameters and buffers
 // *****************************************
@@ -144,7 +140,7 @@ void relu1(float input[CONV1_NUM_OUT][CONV1_OUT_SIZE][CONV1_OUT_SIZE], float out
                 output[i][j][k] = relu(input[i][j][k]);
 }
 
-// Pooling Layer 2
+// Pooling Layer 1
 void max_pooling1(float input[CONV1_NUM_OUT][CONV1_OUT_SIZE][CONV1_OUT_SIZE], float output[CONV1_NUM_OUT][MP1_OUT_SIZE][MP1_OUT_SIZE])
 {
     for (int c = 0; c < CONV1_NUM_OUT; c++)
@@ -162,16 +158,7 @@ void max_pooling1(float input[CONV1_NUM_OUT][CONV1_OUT_SIZE][CONV1_OUT_SIZE], fl
             }
 }
 
-// Relu Layer 2
-void relu2(float input[CONV2_NUM_OUT][CONV2_OUT_SIZE][CONV2_OUT_SIZE], float output[CONV2_NUM_OUT][CONV2_OUT_SIZE][CONV2_OUT_SIZE])
-{
-    for (int i = 0; i < CONV2_NUM_OUT; i++)
-        for (int j = 0; j < CONV2_OUT_SIZE; j++)
-            for (int k = 0; k < CONV2_OUT_SIZE; k++)
-                output[i][j][k] = relu(input[i][j][k]);
-}
-
-// Convolution Layer 3
+// Convolution Layer 2
 void convolution2(float input[CONV1_NUM_OUT][MP1_OUT_SIZE][MP1_OUT_SIZE], float weights[CONV2_NUM_OUT][CONV1_NUM_OUT][CONV2_KERNEL_SIZE][CONV2_KERNEL_SIZE], float bias[CONV2_NUM_OUT], float output[CONV2_NUM_OUT][CONV2_OUT_SIZE][CONV2_OUT_SIZE])
 {
     for (int co = 0; co < CONV2_NUM_OUT; co++){
@@ -191,7 +178,16 @@ void convolution2(float input[CONV1_NUM_OUT][MP1_OUT_SIZE][MP1_OUT_SIZE], float 
     }
 }
 
-// Pooling Layer 4
+// Relu Layer 2
+void relu2(float input[CONV2_NUM_OUT][CONV2_OUT_SIZE][CONV2_OUT_SIZE], float output[CONV2_NUM_OUT][CONV2_OUT_SIZE][CONV2_OUT_SIZE])
+{
+    for (int i = 0; i < CONV2_NUM_OUT; i++)
+        for (int j = 0; j < CONV2_OUT_SIZE; j++)
+            for (int k = 0; k < CONV2_OUT_SIZE; k++)
+                output[i][j][k] = relu(input[i][j][k]);
+}
+
+// Pooling Layer 2
 void max_pooling2(float input[CONV2_NUM_OUT][CONV2_OUT_SIZE][CONV2_OUT_SIZE], float output[CONV2_NUM_OUT][MP2_OUT_SIZE][MP2_OUT_SIZE])
 {
     for (int c = 0; c < CONV2_NUM_OUT; c++){
@@ -209,7 +205,7 @@ void max_pooling2(float input[CONV2_NUM_OUT][CONV2_OUT_SIZE][CONV2_OUT_SIZE], fl
     }
 }
 
-// Fully connected Layer 6
+// Fully connected Layer
 void fc(const float input[CONV2_NUM_OUT][MP2_OUT_SIZE][MP2_OUT_SIZE], const float weights[FC_NUM_OUT][CONV2_NUM_OUT][MP2_OUT_SIZE][MP2_OUT_SIZE], const float bias[FC_NUM_OUT], float output[FC_NUM_OUT])
 {
         for(int n = 0; n < FC_NUM_OUT; n++){
@@ -388,7 +384,7 @@ int parse_parameters()
     }
     else
     {
-        printf("Read conv1_weights (%d bytes) from file\n\r", NumBytesRead);
+        printf("Read conv1_weights (%d floats) from file\n\r", NumBytesRead);
     }
     fclose(fil);
 
@@ -405,7 +401,7 @@ int parse_parameters()
     }
     else
     {
-        printf("Read conv1_bias from file\n\r");
+        printf("Read conv1_bias  (%d floats) from file\n\r", NumBytesRead);
     }
     fclose(fil);
 
@@ -414,7 +410,7 @@ int parse_parameters()
         printf("ERROR when opening parameter file (_conv2_200)!\n\r");
         return XST_FAILURE;
     }
-    NumBytesRead = fread((void*)conv3_weights, sizeof(float), 16*6*5*5, fil);
+    NumBytesRead = fread((void*)conv2_weights, sizeof(float), 16*6*5*5, fil);
     if (NumBytesRead == 0)
     {
         printf("Cant read conv2_weights from file\n\r");
@@ -422,7 +418,7 @@ int parse_parameters()
     }
     else
     {
-        printf("Read conv3_weights from file\n\r");
+        printf("Read conv2_weights  (%d floats) from file\n\r", NumBytesRead);
     }
     fclose(fil);
 
@@ -431,15 +427,15 @@ int parse_parameters()
         printf("ERROR when opening parameter file (bias_conv2_200)!\n\r");
         return XST_FAILURE;
     }
-    NumBytesRead = fread((void*)conv3_bias, sizeof(float), 16, fil);
+    NumBytesRead = fread((void*)conv2_bias, sizeof(float), 16, fil);
     if (NumBytesRead == 0)
     {
-        printf("Cant read conv3_bias from file\n\r");
+        printf("Cant read conv2_bias from file\n\r");
         return XST_FAILURE;
     }
     else
     {
-        printf("Read conv3_bias from file\n\r");
+        printf("Read conv2_bias  (%d floats) from file\n\r", NumBytesRead);
     }
     fclose(fil);
 
@@ -448,15 +444,15 @@ int parse_parameters()
         printf("ERROR when opening parameter file (_score_200)!\n\r");
         return XST_FAILURE;
     }
-    NumBytesRead = fread((void*)fc6_weights, sizeof(float), 10*16*4*4, fil);
+    NumBytesRead = fread((void*)fc_weights, sizeof(float), 10*16*4*4, fil);
     if (NumBytesRead == 0)
     {
-        printf("Cant read fc6_weights from file\n\r");
+        printf("Cant read fc_weights from file\n\r");
         return XST_FAILURE;
     }
     else
     {
-        printf("Read fc6_weights from file\n\r");
+        printf("Read fc_weights (%d floats) from file\n\r", NumBytesRead);
     }
     fclose(fil);
 
@@ -465,15 +461,15 @@ int parse_parameters()
         printf("ERROR when opening parameter file (bias_score_200)!\n\r");
         return XST_FAILURE;
     }
-    NumBytesRead = fread((void*)fc6_bias, sizeof(float), 10, fil);
+    NumBytesRead = fread((void*)fc_bias, sizeof(float), 10, fil);
     if (NumBytesRead == 0)
     {
-        printf("Cant read fc6_bias from file\n\r");
+        printf("Cant read fc_bias from file\n\r");
         return XST_FAILURE;
     }
     else
     {
-        printf("Read fc6_bias from file\n\r");
+        printf("Read fc_bias (%d floats) from file\n\r", NumBytesRead);
     }
     fclose(fil);
 
@@ -483,15 +479,12 @@ int parse_parameters()
 
 // Fetch a single image to be processed.
 //
-void get_image(unsigned char *images, unsigned int idx, float image[1][32][32])
+void get_image(unsigned char *images, unsigned int idx, float image[1][IM_SIZE][IM_SIZE])
 {
-    for (int i = 0; i < 32; i++)
-        for (int j = 0; j < 32; j++)
+    for (int i = 0; i < IM_SIZE; i++)
+        for (int j = 0; j < IM_SIZE; j++)
         {
-            if (i < 2 || i > 29 || j < 2 || j > 29)
-                image[0][i][j] = -1.0;
-            else
-                image[0][i][j] = images[idx * 28 * 28 + (i - 2) * 28 + j - 2] / (float)255.0 * (float)2.0 - (float)1.0; // Linear scale
+            image[0][i][j] = images[idx * 28 * 28 + i * 28 + j] / (float)256.0;
         }
 }
 
@@ -539,20 +532,13 @@ int main(int argc, char **argv)
         //Begin inference here.
         convolution1(image, conv1_weights, conv1_bias, conv1_output);
         relu1(conv1_output, conv1_output);
+        max_pooling1(conv1_output, pool1_output);
 
-        max_pooling2(conv1_output, pool2_output);
-        relu2(pool2_output, pool2_output);
+        convolution2(pool1_output, conv2_weights, conv2_bias, conv2_output);
+        relu2(conv2_output, conv2_output);
+        max_pooling2(conv2_output, pool2_output);
 
-        convolution3(pool2_output, conv3_weights, conv3_bias, conv3_output);
-        relu3(conv3_output, conv3_output);
-
-        max_pooling4(conv3_output, pool4_output);
-        relu4(pool4_output, pool4_output);
-
-        convolution5(pool4_output, conv5_weights, conv5_bias, conv5_output);
-        relu5(conv5_output, conv5_output);
-
-        fc6(conv5_output, fc6_weights, fc6_bias, fc6_output);
+        fc(pool2_output, fc_weights, fc_bias, fc_output);
         //End inference here.
 
         //Check which output was largest.
@@ -560,9 +546,9 @@ int main(int argc, char **argv)
         float p = -FLT_MAX;
         for (int i = 0; i < 10; i++)
         {
-            if (fc6_output[i] > p)
+            if (fc_output[i] > p)
             {
-                p = fc6_output[i];
+                p = fc_output[i];
                 result = i;
             }
         }
