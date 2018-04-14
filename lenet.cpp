@@ -136,20 +136,20 @@ void convolution1(float input[1][IM_SIZE][IM_SIZE], float weights[CONV1_NUM_OUT]
 }
 
 // Relu Layer 1
-void relu1(float input[6][28][28], float output[6][28][28])
+void relu1(float input[CONV1_NUM_OUT][CONV1_OUT_SIZE][CONV1_OUT_SIZE], float output[CONV1_NUM_OUT][CONV1_OUT_SIZE][CONV1_OUT_SIZE])
 {
-    for (int i = 0; i < 6; i++)
-        for (int j = 0; j < 28; j++)
-            for (int k = 0; k < 28; k++)
+    for (int i = 0; i < CONV1_NUM_OUT; i++)
+        for (int j = 0; j < CONV1_OUT_SIZE; j++)
+            for (int k = 0; k < CONV1_OUT_SIZE; k++)
                 output[i][j][k] = relu(input[i][j][k]);
 }
 
 // Pooling Layer 2
-void max_pooling2(float input[6][28][28], float output[6][14][14])
+void max_pooling1(float input[CONV1_NUM_OUT][CONV1_OUT_SIZE][CONV1_OUT_SIZE], float output[CONV1_NUM_OUT][MP1_OUT_SIZE][MP1_OUT_SIZE])
 {
-    for (int c = 0; c < 6; c++)
-        for (int h = 0; h < 14; h++)
-            for (int w = 0; w < 14; w++)
+    for (int c = 0; c < CONV1_NUM_OUT; c++)
+        for (int h = 0; h < MP1_OUT_SIZE; h++)
+            for (int w = 0; w < MP1_OUT_SIZE; w++)
             {
                 float max_value = -FLT_MAX;
                 for (int i = h * 2; i < h * 2 + 2; i++)
@@ -163,30 +163,32 @@ void max_pooling2(float input[6][28][28], float output[6][14][14])
 }
 
 // Relu Layer 2
-void relu2(float input[6][14][14], float output[6][14][14])
+void relu2(float input[CONV2_NUM_OUT][CONV2_OUT_SIZE][CONV2_OUT_SIZE], float output[CONV2_NUM_OUT][CONV2_OUT_SIZE][CONV2_OUT_SIZE])
 {
-    for (int i = 0; i < 6; i++)
-        for (int j = 0; j < 14; j++)
-            for (int k = 0; k < 14; k++)
+    for (int i = 0; i < CONV2_NUM_OUT; i++)
+        for (int j = 0; j < CONV2_OUT_SIZE; j++)
+            for (int k = 0; k < CONV2_OUT_SIZE; k++)
                 output[i][j][k] = relu(input[i][j][k]);
 }
 
 // Convolution Layer 3
-void convolution3(float input[6][14][14], float weights[16][6][5][5], float bias[16], float output[16][10][10])
+void convolution2(float input[CONV1_NUM_OUT][MP1_OUT_SIZE][MP1_OUT_SIZE], float weights[CONV2_NUM_OUT][CONV1_NUM_OUT][CONV2_KERNEL_SIZE][CONV2_KERNEL_SIZE], float bias[CONV2_NUM_OUT], float output[CONV2_NUM_OUT][CONV2_OUT_SIZE][CONV2_OUT_SIZE])
 {
-    for (int co = 0; co < 16; co++)
-        for (int h = 0; h < 10; h++)
-            for (int w = 0; w < 10; w++)
-            {
+    for (int co = 0; co < CONV2_NUM_OUT; co++){
+        for (int h = 0; h < CONV2_OUT_SIZE; h++){
+            for (int w = 0; w < CONV2_OUT_SIZE; w++){
                 float sum = 0;
-                for (int i = h, m = 0; i < (h + 5); i++, m++)
-                {
-                    for (int j = w, n = 0; j < (w + 5); j++, n++)
-                        for (int ci = 0; ci < 6; ci++)
+                for (int i = h, m = 0; i < (h + CONV2_KERNEL_SIZE); i++, m++){
+                    for (int j = w, n = 0; j < (w + CONV2_KERNEL_SIZE); j++, n++){
+                        for (int ci = 0; ci < CONV1_NUM_OUT; ci++){
                             sum += weights[co][ci][m][n] * input[ci][i][j];
+                        }
+                    }
                 }
                 output[co][h][w] = sum + bias[co];
             }
+        }
+    }
 }
 
 // Relu Layer 3
