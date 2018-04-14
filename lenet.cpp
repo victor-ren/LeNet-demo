@@ -191,87 +191,41 @@ void convolution2(float input[CONV1_NUM_OUT][MP1_OUT_SIZE][MP1_OUT_SIZE], float 
     }
 }
 
-// Relu Layer 3
-void relu3(float input[16][10][10], float output[16][10][10])
-{
-    for (int i = 0; i < 16; i++)
-        for (int j = 0; j < 10; j++)
-            for (int k = 0; k < 10; k++)
-                output[i][j][k] = relu(input[i][j][k]);
-}
-
 // Pooling Layer 4
-void max_pooling4(float input[16][10][10], float output[16][5][5])
+void max_pooling2(float input[CONV2_NUM_OUT][CONV2_OUT_SIZE][CONV2_OUT_SIZE], float output[CONV2_NUM_OUT][MP2_OUT_SIZE][MP2_OUT_SIZE])
 {
-    for (int c = 0; c < 16; c++)
-        for (int h = 0; h < 5; h++)
-            for (int w = 0; w < 5; w++)
-            {
+    for (int c = 0; c < CONV2_NUM_OUT; c++){
+        for (int h = 0; h < CONV2_OUT_SIZE; h++){
+            for (int w = 0; w < CONV2_OUT_SIZE; w++){
                 float max_value = -FLT_MAX;
-                for (int i = h * 2; i < h * 2 + 2; i++)
-                {
-                    for (int j = w * 2; j < w * 2 + 2; j++)
+                for (int i = h * 2; i < h * 2 + 2; i++){
+                    for (int j = w * 2; j < w * 2 + 2; j++){
                         max_value = (max_value > input[c][i][j]) ? max_value : input[c][i][j];
+                    }
                 }
                 output[c][h][w] = max_value;
             }
-}
-
-// Relu Layer 4
-void relu4(float input[16][5][5], float output[16][5][5])
-{
-    for (int i = 0; i < 16; i++)
-        for (int j = 0; j < 5; j++)
-            for (int k = 0; k < 5; k++)
-                output[i][j][k] = relu(input[i][j][k]);
-}
-
-// Convolution Layer 5
-void convolution5(float input[16][5][5], float weights[120][16][5][5], float bias[120], float output[120][1][1])
-{
-    for (int co = 0; co < 120; co++)
-    {
-        float sum = 0;
-        for (int i = 0, m = 0; i < 5; i++, m++)
-        {
-            for (int j = 0, n = 0; j < 5; j++, n++)
-            {
-                for (int ci = 0; ci < 16; ci++)
-                    sum += weights[co][ci][m][n] * input[ci][i][j];
-            }
         }
-        output[co][0][0] = sum + bias[co];
     }
 }
 
-// Relu Layer 5
-void relu5(float input[120][1][1], float output[120][1][1])
-{
-    for (int i = 0; i < 120; i++)
-        output[i][0][0] = relu(input[i][0][0]);
-}
-
 // Fully connected Layer 6
-void fc6(const float input[120][1][1], const float weights[10][16][4][4], const float bias[10], float output[10])
+void fc(const float input[CONV2_NUM_OUT][MP2_OUT_SIZE][MP2_OUT_SIZE], const float weights[FC_NUM_OUT][CONV2_NUM_OUT][MP2_OUT_SIZE][MP2_OUT_SIZE], const float bias[FC_NUM_OUT], float output[FC_NUM_OUT])
 {
-        for(int n = 0; n < 10; n++)
-        {
+        for(int n = 0; n < FC_NUM_OUT; n++){
             output[n] = 0;
-            for(int c = 0; c < 16; c++)
-            {
-                output[n] += weights[n][c][0][0] * input[c][0][0];
+            for(int c = 0; c < 16; c++){
+                for(int y = 0; y < MP2_OUT_SIZE; y++){
+                    for (int x = 0; x < MP2_OUT_SIZE; x++){
+                        output[n] += weights[n][c][y][x] * input[c][y][x];
+                    }
+                }
             }
             output[n]+=bias[n];
         }
-
 }
 
-// Relu Layer 6
-void relu6(float input[10], float output[10])
-{
-    for (int i = 0; i < 10; i++)
-        output[i] = relu(input[i]);
-}
+
 // *****************************************
 // End declaration of layers functions
 // *****************************************
